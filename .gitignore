@@ -3,3 +3,5 @@
 ./Driving/training
 ./Drebin/dataset
 /Drebin/*.h5
+/MNIST/generated_inputs
+/MNIST/saved_inputs
