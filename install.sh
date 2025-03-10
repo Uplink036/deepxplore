@@ -6,5 +6,5 @@ make pip27
 make req
 
 sudo apt install python3-pip -y
-pip install -r noteboke_req.txt
+pip install -r notebook_req.txt
 python3 -m pip install ipykernel -U --user --force-reinstall
