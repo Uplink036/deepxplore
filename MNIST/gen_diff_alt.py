@@ -17,7 +17,6 @@ from configs import bcolors
 from utils import *
 from random import seed
 
-
 # read the parameter
 # argument parsing
 parser = argparse.ArgumentParser(description='Main function for difference-inducing input generation in MNIST dataset')
@@ -35,10 +34,8 @@ parser.add_argument('-occl_size', '--occlusion_size', help="occlusion size", def
 
 args = parser.parse_args()
 
-
 # Seeding
 seed(42)
-
 
 # input image dimensions
 img_rows, img_cols = 28, 28
@@ -64,7 +61,7 @@ model_layer_dict1, model_layer_dict2, model_layer_dict3 = init_coverage_tables(m
 
 # ==============================================================================================
 # start gen inputs
-for _ in xrange(args.seeds):
+for index in xrange(args.seeds):
     gen_img = np.expand_dims(random.choice(x_test), axis=0)
     orig_img = gen_img.copy()
     # first check if input already induces differences
@@ -104,15 +101,15 @@ for _ in xrange(args.seeds):
     layer_name3, index3 = neuron_to_cover(model_layer_dict3)
 
     # construct joint loss function
-    if args.target_model == 0:
+    if (index % 3) == 0:
         loss1 = -args.weight_diff * K.mean(model1.get_layer('before_softmax').output[..., orig_label])
         loss2 = K.mean(model2.get_layer('before_softmax').output[..., orig_label])
         loss3 = K.mean(model3.get_layer('before_softmax').output[..., orig_label])
-    elif args.target_model == 1:
+    elif (index % 3) == 1:
         loss1 = K.mean(model1.get_layer('before_softmax').output[..., orig_label])
         loss2 = -args.weight_diff * K.mean(model2.get_layer('before_softmax').output[..., orig_label])
         loss3 = K.mean(model3.get_layer('before_softmax').output[..., orig_label])
-    elif args.target_model == 2:
+    elif (index % 3) == 2:
         loss1 = K.mean(model1.get_layer('before_softmax').output[..., orig_label])
         loss2 = K.mean(model2.get_layer('before_softmax').output[..., orig_label])
         loss3 = -args.weight_diff * K.mean(model3.get_layer('before_softmax').output[..., orig_label])

@@ -17,7 +17,6 @@ from configs import bcolors
 from utils import *
 from random import seed
 
-
 # read the parameter
 # argument parsing
 parser = argparse.ArgumentParser(description='Main function for difference-inducing input generation in MNIST dataset')
@@ -25,9 +24,9 @@ parser.add_argument('transformation', help="realistic transformation type", choi
 parser.add_argument('weight_diff', help="weight hyperparm to control differential behavior", type=float)
 parser.add_argument('weight_nc', help="weight hyperparm to control neuron coverage", type=float)
 parser.add_argument('step', help="step size of gradient descent", type=float)
-parser.add_argument('seeds', help="number of seeds of input", type=int)
 parser.add_argument('grad_iterations', help="number of iterations of gradient descent", type=int)
 parser.add_argument('threshold', help="threshold for determining neuron activated", type=float)
+parser.add_argument('coverage', help="threshold for determining when to break", type=float)
 parser.add_argument('-t', '--target_model', help="target model that we want it predicts differently",
                     choices=[0, 1, 2], default=0, type=int)
 parser.add_argument('-sp', '--start_point', help="occlusion upper left corner coordinate", default=(0, 0), type=tuple)
@@ -35,10 +34,8 @@ parser.add_argument('-occl_size', '--occlusion_size', help="occlusion size", def
 
 args = parser.parse_args()
 
-
 # Seeding
 seed(42)
-
 
 # input image dimensions
 img_rows, img_cols = 28, 28
@@ -64,7 +61,10 @@ model_layer_dict1, model_layer_dict2, model_layer_dict3 = init_coverage_tables(m
 
 # ==============================================================================================
 # start gen inputs
-for _ in xrange(args.seeds):
+target_model = 0
+averaged_nc = 0
+print(args.coverage)
+while  averaged_nc < args.coverage:
     gen_img = np.expand_dims(random.choice(x_test), axis=0)
     orig_img = gen_img.copy()
     # first check if input already induces differences
@@ -96,7 +96,6 @@ for _ in xrange(args.seeds):
         imsave('./generated_inputs/' + 'already_differ_' + str(label1) + '_' + str(
             label2) + '_' + str(label3) + '.png', gen_img_deprocessed)
         continue
-
     # if all label agrees
     orig_label = label1
     layer_name1, index1 = neuron_to_cover(model_layer_dict1)
@@ -104,18 +103,21 @@ for _ in xrange(args.seeds):
     layer_name3, index3 = neuron_to_cover(model_layer_dict3)
 
     # construct joint loss function
-    if args.target_model == 0:
+    if target_model == 0:
         loss1 = -args.weight_diff * K.mean(model1.get_layer('before_softmax').output[..., orig_label])
         loss2 = K.mean(model2.get_layer('before_softmax').output[..., orig_label])
         loss3 = K.mean(model3.get_layer('before_softmax').output[..., orig_label])
-    elif args.target_model == 1:
+        target_model += 1
+    elif target_model == 1:
         loss1 = K.mean(model1.get_layer('before_softmax').output[..., orig_label])
         loss2 = -args.weight_diff * K.mean(model2.get_layer('before_softmax').output[..., orig_label])
         loss3 = K.mean(model3.get_layer('before_softmax').output[..., orig_label])
-    elif args.target_model == 2:
+        target_model += 1
+    elif target_model == 2:
         loss1 = K.mean(model1.get_layer('before_softmax').output[..., orig_label])
         loss2 = K.mean(model2.get_layer('before_softmax').output[..., orig_label])
         loss3 = -args.weight_diff * K.mean(model3.get_layer('before_softmax').output[..., orig_label])
+        target_model = 0
     loss1_neuron = K.mean(model1.get_layer(layer_name1).output[..., index1])
     loss2_neuron = K.mean(model2.get_layer(layer_name2).output[..., index2])
     loss3_neuron = K.mean(model3.get_layer(layer_name3).output[..., index3])

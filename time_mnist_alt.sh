@@ -13,7 +13,7 @@ weight_nc=0.1
 step=10 
 num_input_seeds=100
 num_iterations_per_seeds=20 #20
-threshold=0
+threshold=0.25 #0
 set -o pipefail
 
 echo "| Size | Time(s) | Contradictions | "
@@ -24,7 +24,7 @@ mkdir -p generated_inputs/
 mkdir -p saved_inputs/
 size=(100 200 300 400 500); 
 for s in ${size[@]}; do
-    time_str=$( { time python2.7 gen_diff.py \
+    time_str=$( { time python2.7 gen_diff_alt.py \
         $transformation \
         $weight_diff \
         $weight_nc \
